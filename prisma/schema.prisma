@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  TEACHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  role      Role     @default(MANAGER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Student {
+  id          String       @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?      @unique
+  phone       String?
+  birthDate   DateTime?
+  status      String       @default("active")
+  enrollments Enrollment[]
+  payments    Payment[]
+  attendances Attendance[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Teacher {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?  @unique
+  phone     String?
+  subject   String?
+  status    String   @default("active")
+  groups    Group[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Group {
+  id          String       @id @default(cuid())
+  name        String
+  subject     String
+  level       String
+  teacher     Teacher?     @relation(fields: [teacherId], references: [id])
+  teacherId   String?
+  schedule    String
+  room        String?
+  enrollments Enrollment[]
+  attendances Attendance[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  student   Student  @relation(fields: [studentId], references: [id])
+  studentId String
+  group     Group    @relation(fields: [groupId], references: [id])
+  groupId   String
+  joinedAt  DateTime @default(now())
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  student    Student       @relation(fields: [studentId], references: [id])
+  studentId  String
+  amount     Float
+  dueDate    DateTime
+  paidAt     DateTime?
+  status     PaymentStatus @default(PENDING)
+  method     String?
+  note       String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model Attendance {
+  id         String          @id @default(cuid())
+  student    Student         @relation(fields: [studentId], references: [id])
+  studentId  String
+  group      Group           @relation(fields: [groupId], references: [id])
+  groupId    String
+  date       DateTime
+  status     AttendanceStatus @default(PRESENT)
+  note       String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
